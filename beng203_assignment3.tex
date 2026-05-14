@@ -7,6 +7,9 @@
 \usepackage{amsmath}
 \usepackage{csvsimple}
 \usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{automata, positioning}
+
 
 \title{BENG 203 Assignment 3}
 \author{Savan Shah}
@@ -17,6 +20,71 @@
 \maketitle
 
 \textbf{Problem 1:}
+\begin{center}
+\begin{tikzpicture}[
+    >=stealth,
+    shorten >=1pt,
+    node distance=4cm,
+    on grid,
+    auto,
+    state/.style={
+        circle,
+        draw,
+        minimum size=2cm
+    }
+]
+\node[state] (I) {Intracellular};
+\node[state] (T) [right=of I] {Transmembrane};
+\node[state] (E) [right=of T] {Extracellular};
+
+\path[->]
+(I) edge[loop above] node {0.6} (I)
+(T) edge[loop above] node {0.6} (T)
+(E) edge[loop above] node {0.6} (E);
+
+\path[->]
+(I) edge[bend left=15] node {0.4} (T)
+(T) edge[bend left=15] node {0.2} (I)
+(T) edge[bend left=15] node {0.2} (E)
+(E) edge[bend left=15] node {0.4} (T);
+
+\end{tikzpicture}
+\end{center}
+
+For this Hidden Markov Model, there are three hidden states $Q = \{Intracellular, Transmembrane, Extracellular\}$.
+The observed states $\Sigma$ are the 20 amino acids. The initial state distribution is $\pi = \{1, 0, 0\}$ since we start in the intracellular state.
+The emission probabilities vary by state:
+\[
+e_I(a)=\frac{1}{20}
+\qquad \forall a \in \Sigma
+\]
+
+\[
+e_T(a)=
+\begin{cases}
+\frac{15}{100}, & a \in \{L,I,V,F,W\} \\[6pt]
+\frac{1}{100}, & \text{otherwise}
+\end{cases}
+\]
+
+\[
+e_E(a)=
+\begin{cases}
+\frac{43}{300}, & a \in \{R,K,D,E,Q,N\} \\[6pt]
+\frac{1}{100}, & \text{otherwise}
+\end{cases}
+\]
+The transition probabilities are given by the edges in the diagram, which can be represented in matrix form as follows:
+\begin{center}
+    \[
+T =
+\begin{bmatrix}
+0.6 & 0.4 & 0 \\
+0.2 & 0.6 & 0.2 \\
+0   & 0.4 & 0.6
+\end{bmatrix}
+\]
+\end{center}
 
 \pagebreak
 
