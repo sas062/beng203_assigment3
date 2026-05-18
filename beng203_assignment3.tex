@@ -90,11 +90,87 @@ T =
 
 \textbf{Problem 2:}
 \begin{enumerate}[label=(\alph*)]
-    \item The theoretical residue mass is: 781.349 Da.\\
-        The theoretical peptide mass is: 799.365 Da.\\
-        The ion mass for charge Z = 2 is: 400.682 Da.\\
-    \item 
+    \item The theoretical residue mass is: 781.349 Da. \\
+    The theoretical peptide mass is: 799.365 Da. \\
+    The ion mass for charge $Z = 2$ is: 400.690 Da.
+    \item $PEPMASS = 777.25439453 = \frac{m}{z}$ and $CHARGE=7+ = z$ are given in the mgf file.
+    $$M_{peptide} = z\left(\frac{m}{z}\right) - zM_{proton} = 7(777.25439453) - 7(1.007276466812) = 5433.7298$$
+    $$M_{residue} = M_{peptide} - M_{water} = 5433.7298 - 18.0153 = 5415.7145$$
+    High mass accuracy is important because it narrows the number of possible peptide candidates, making peptide identification is more specific and reducing false matches.
+    It also improves confidence in matching experimental precursor and fragment ions to their theoretical masses.
+    \item $$\text{ppm error} = \frac{|m_{observed} - m_{theoretical}|}{m_{theoretical}}\times 10^6$$
 
+    Only one candidate peptide was found in the given tolerance: $$\text{QQPDGLAVVGVFLKVGDANPALQKVLDALDSIKTKGKSTDFPNFDPGSLLPN}$$
+    This peptide occurs at positions 135--186, has theoretical neutral mass $5433.8871$ Da, and has ppm error $28.95$ ppm.
+    The second closest candidate peptide is: $$\text{LKEPISVSSQQMLKFRTLNFNAEGEPELLMLANWRPAQPLKNRQVRG}$$
+    This peptide is slightly out of tolerance at 30.68 ppm, and occurs at positions 211--257 with theoretical neutral mass $5433.8966$ Da. I have included it here for completeness as it may be due rounding errors from the amino acid masses I am using.
+
+    \item After generating the theoretical spectrum, the charge 2 ions for each candidate were output to a csv. 
+    Due to the size of the table, it has been left as a separate csv rather than embedded in this document. 
+        See candidate\_1\_spectrum.csv and candidate\_2\_spectrum.csv for the results, which have been validated against Protein Prospector's theoretical spectrum generator.
+
+    \item To make a spectral similarity score between the experimental spectrum and the theoretical spectrum, I would use a cosine similarity score.
+    First, I would match each theoretical fragment ion to the closest experimental peak with a small fragment mass tolerance, such as 10 ppm. This tight tolerance is chosen as the MS2 fragments were measured with very high mass accuracy, so we can be confident in the matches. 
+    Then, I would normalize the intensities of the experimental peaks and assign the theoretical peaks all to an intensity of 1 since we don't have true abundance measurements. 
+    Now, the spectra can be represented as vectors, and the cosine similarity can be calculated as follows:
+    $$\text{Cosine Similarity} = \frac{A \cdot B}{\|A\| \|B\|} = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}$$
+    Where $A$ is the vector of theoretical peak intensities and $B$ is the vector of matched experimental peak intensities.\\
+    Inputs: theoretical spectrum (m/z, ion label), experimental spectrum (m/z, intensity), fragment mass tolerance.\\
+    Output: A score between 0 and 1, where 1 indicates a strong match between the theoretical and experimental spectra, and 0 indicates no similarity.
+    \begin{algorithm}[H]
+    \caption{Cosine Similarity Scoring}
+    \begin{algorithmic}[1]
+
+    \State \textbf{Inputs:}
+    \State \hspace{1em} theoretical\_spectrum $=$ list of $(m/z,\ \text{ion label})$
+    \State \hspace{1em} experimental\_spectrum $=$ list of $(m/z,\ \text{intensity})$
+    \State \hspace{1em} fragment\_mass\_tolerance $= 10$ ppm
+
+    \State \textbf{Output:}
+    \State \hspace{1em} cosine\_similarity\_score
+
+    \State max\_intensity $\gets \max(\text{experimental intensities})$
+
+    \For{each peak $e$ in experimental\_spectrum}
+        \State $e.\text{intensity} \gets e.\text{intensity} / \text{max\_intensity}$
+    \EndFor
+
+    \State $A \gets [\ ]$
+    \State $B \gets [\ ]$
+
+    \For{each theoretical peak $t$ in theoretical\_spectrum}
+
+        \State match $\gets$ closest experimental peak within $10$ ppm of $t$
+
+        \State append$(A,\ 1)$
+
+        \If{match exists}
+            \State append$(B,\ \text{match.intensity})$
+        \Else
+            \State append$(B,\ 0)$
+        \EndIf
+
+    \EndFor
+
+    \State numerator $\gets A \cdot B$
+    \State denominator $\gets \|A\| \times \|B\|$
+
+    \State cosine\_similarity\_score $\gets \dfrac{\text{numerator}}{\text{denominator}}$
+
+    \State \Return cosine\_similarity\_score
+
+    \end{algorithmic}
+    \end{algorithm}
+
+    \item Peptide: QQPDGLAVVGVFLKVGDANPALQKVLDALDSIKTKGKSTDFPNFDPGSLLPN\\
+        Top 3 most intense matched peaks:
+        \begin{enumerate}[label=(\roman*)]
+            \item Experimental m/z = 669.6343\\Ion = c26\\Charge = 4\\Sequence = QQPDGLAVVGVFLKVGDANPALQKVL\\PPM error = 3.37
+            \item Experimental m/z = 947.5417\\ Ion = a37\\ Charge = 4\\Sequence = QQPDGLAVVGVFLKVGDANPALQKVLDALDSIKTKGK\\PPM error = 0.82 
+            \item Experimental m/z = 1295.2152\\Ion = a50\\Charge = 4\\Sequence = QQPDGLAVVGVFLKVGDANPALQKVLDALDSIKTKGKSTDFPNFDPGSLL\\PPM error = 9.75
+        \end{enumerate}
+        \includegraphics[width=1\textwidth]{annotated_spectrum.png}
+    
 \end{enumerate}
 
 
